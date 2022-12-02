@@ -1,1 +1,7 @@
 0xA2Be3912A317e9163aF24405ED4bB46E55BCCB0e
+redlc testnet:
+network name = REDLC Testnet
+RPC URL = https://dataseed-testnet.redlightscan.finance/
+Chain Id = 8457
+Symbol = REDLC
+Block emplorer URL = https://testnet.redlightscan.finance/
