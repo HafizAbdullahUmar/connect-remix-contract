@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { Button, Container } from "react-bootstrap";
+import { Button, Col, Container, Form, Row } from "react-bootstrap";
 import { ethers, BigNumber } from "ethers";
 import ConnectContract_abi from "../ConnectContract_abi.json";
 import Web3 from "web3";
 
 function ConnectContract() {
+  const web3 = new Web3(window.ethereum);
   const contractAddress = "0xA2Be3912A317e9163aF24405ED4bB46E55BCCB0e";
   const [errorMessage, setErrorMessage] = useState(null);
   const [defaultAccount, setDefaultAccount] = useState(null);
@@ -14,7 +15,9 @@ function ConnectContract() {
   const [signer, setSigner] = useState(null);
   const [contract, setContract] = useState(null);
   const [balanceOfToken, setBalanceOfToken] = useState();
-
+  const [transferAmount, setTransferAmount] = useState(55);
+  const [transferAddress, setTransferAddress] = useState("");
+  const [ishidden, setIsHidden] = useState(true);
   const connectWalletHandler = () => {
     if (window.ethereum) {
       window.ethereum
@@ -22,6 +25,7 @@ function ConnectContract() {
         .then((result) => {
           accountChangedHandler(result[0]);
           setConnBtnText("Wallet Connected");
+          setIsHidden(false);
         });
     } else {
       setErrorMessage("Install MetaMask");
@@ -46,44 +50,74 @@ function ConnectContract() {
     setContract(tempContract);
   };
   const getTotalSupply = async () => {
-    console.log("name::", contract.name());
-
-    let supply = await contract.name();
-    setCurrentContractVal(supply);
+    let supply = await contract.totalSupply();
+    let supplyInEther = web3.utils.fromWei(
+      web3.utils.hexToNumberString(supply._hex)
+    );
+    setCurrentContractVal(supplyInEther);
   };
 
   const getBalanceOfToken = async () => {
-    const web3 = new Web3(window.ethereum);
     let balance = await contract.balanceOf(window.ethereum.selectedAddress);
-    // console.log("balance::", BigNumber.prototype.toNumber(balance._hex));
-    console.log(
-      "balance::",
-      web3.utils.fromWei(web3.utils.hexToNumberString(balance._hex), "ether")
-    );
     setBalanceOfToken(
       web3.utils.fromWei(web3.utils.hexToNumberString(balance._hex), "ether")
     );
   };
+  const transferToken = async () => {
+    contract.transfer(transferAddress, transferAmount);
+    console.log(contract);
+  };
   return (
     <>
-      <Container className="text-center mt-5 py-5">
-        <h3>{"Interacting with smart contract"}</h3>
-        <Button className="my-4" onClick={connectWalletHandler}>
-          {connBtnText}
-        </Button>
-        <h3>Address: {defaultAccount}</h3>
+      <Container className={ishidden ? "" : "text-center mt-5 py-5"}>
+        <div hidden={!ishidden} className="intro-page">
+          <h1>{"Connect your wallet to start using the app"}</h1>
+          <Button className="my-4" onClick={connectWalletHandler}>
+            {connBtnText}
+          </Button>
+        </div>
+        <Container hidden={ishidden}>
+          <h3>Address: {defaultAccount}</h3>
 
-        <Button className="my-4" onClick={getTotalSupply}>
-          {"Get Total Supply"}
-        </Button>
-        <h3>TotalSupply: {currentContractVal}</h3>
+          <h2 className="mt-5">Total Supply</h2>
+          <Button className="my-2" onClick={getTotalSupply}>
+            {"Click here"}
+          </Button>
+          <h4>{currentContractVal}</h4>
 
-        <Button className="my-4" onClick={getBalanceOfToken}>
-          {"Get Balance of Token"}
-        </Button>
-        <h3>Balance of token: {balanceOfToken}</h3>
-
-        {errorMessage}
+          <h2 className="mt-5">Token Balance</h2>
+          <Button className="my-2" onClick={getBalanceOfToken}>
+            {"Click here"}
+          </Button>
+          <h4>
+            {balanceOfToken ? balanceOfToken.split(".")[0] : balanceOfToken}
+          </h4>
+          <Container className="mt-5">
+            <h1>Transfer Tokken</h1>
+            <Row lg={2}>
+              <Col>
+                <Form.Control
+                  placeholder="Address to transfer"
+                  onChange={(event) => {
+                    setTransferAddress(event.target.value);
+                  }}
+                />
+              </Col>
+              <Col>
+                <Form.Control
+                  placeholder="Enter amount"
+                  onChange={(event) => {
+                    setTransferAmount(event.target.value);
+                  }}
+                />
+              </Col>
+            </Row>
+            <Button className="my-4" onClick={transferToken}>
+              {"Click to Transfer"}
+            </Button>
+          </Container>
+          {errorMessage}
+        </Container>
       </Container>
     </>
   );
